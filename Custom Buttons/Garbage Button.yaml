@@ -49,7 +49,8 @@ button_card_templates:
       custom_fields:
         s2:
           - justify-self: start
-          - margin-left: 10%
+          - margin-left: 3%
+          - margin-right: 3%
           - padding-bottom: 5%
           - font-size: 10pt
       grid:
@@ -61,11 +62,11 @@ button_card_templates:
         - justify-self: start
       name:
         - justify-self: start
-        - margin-left: 10%
+        - margin-left: 3%
         - font-weight: bold
       state:
         - justify-self: start
-        - margin-left: 10%
+        - margin-left: 3%
         - font-size: 10pt
 title: Garbage Button
 views:
@@ -73,62 +74,113 @@ views:
     path: test
     badges: []
     cards:
-      - type: grid
+      - square: true
+        type: grid
         cards:
           - custom_fields:
               s2: |
                 [[[
-                  var bbag_state = (states['sensor.black_bag'].state);
-                  var bbag_days = (states['sensor.black_bag'].attributes.days);
-                  var recycle_sensor = (states['sensor.recycling'].state);
-                  var recycle_days = (states['sensor.recycling'].attributes.days);
-                  if (bbag_days => 7) return "Black Bag in " + bbag_days + " Days";
-                  else {
-                    if (recycle_sensor == "0") return "Recycling Today";
-                    else if (recycle_sensor == "1") return "Recycling Tomorrow";
-                    else return "Recycling in " + recycle_days + " Days"; 
+                  var recycle_sensor = states['sensor.reciclagem_azul'].state;
+                  var recycle_days = states['sensor.reciclagem_azul'].attributes.daysTo;
+                  var recycle_sensor2 = states['sensor.reciclagem_amarelo'].state;
+                  var recycle_days2 = states['sensor.reciclagem_amarelo'].attributes.daysTo;
+                  var recycle_sensor3 = states['sensor.reciclagem_verde'].state;
+                  var recycle_days3 = states['sensor.reciclagem_verde'].attributes.daysTo;
+
+                  var recycle_friendly_name = {
+                    "recycle_sensor": states['sensor.reciclagem_azul'].attributes.friendly_name,
+                    "recycle_sensor2": states['sensor.reciclagem_amarelo'].attributes.friendly_name,
+                    "recycle_sensor3": states['sensor.reciclagem_verde'].attributes.friendly_name
+                  };
+
+                  // Find the second minimum number of days among the three sensors
+                  var minDaysArray = [recycle_days, recycle_days2, recycle_days3].sort(function(a, b) {
+                    return a - b;
+                  });
+
+                  var secondMinDays = minDaysArray[1]; // Index 0 is the minimum, index 1 is the second minimum
+
+                  // Determine which sensor has the second nearest collection day
+                  var secondNearestSensor;
+                  if (secondMinDays === recycle_days) {
+                    secondNearestSensor = recycle_sensor;
+                  } else if (secondMinDays === recycle_days2) {
+                    secondNearestSensor = recycle_sensor2;
+                  } else {
+                    secondNearestSensor = recycle_sensor3;
                   }
+
+                  var sensorName;
+                  if (secondNearestSensor === "2") {
+                    sensorName = recycle_friendly_name.recycle_sensor;
+                  } else if (secondNearestSensor === "3") {
+                    sensorName = recycle_friendly_name.recycle_sensor2;
+                  } else if (secondNearestSensor === "4") {
+                    sensorName = recycle_friendly_name.recycle_sensor3;
+                  }
+
+                  return "<marquee behavior='scroll' direction='left' scrollamount='3'>Proximo: " + secondMinDays + " Dias para " + sensorName + "</marquee>";
                 ]]]
             name: |
               [[[
-                var bbag_state = (states['sensor.black_bag'].state);
-                var bbag_days = (states['sensor.black_bag'].attributes.days);
-                var recycle_sensor = (states['sensor.recycling'].state);
-                var recycle_days = (states['sensor.recycling'].attributes.days);
-                if ((bbag_days <= 7) && (recycle_sensor == "2" || recycle_sensor == "1")) return "Black Bag";
-                else return "Recycling" 
-              ]]]
+                  var recycle_sensor = states['sensor.reciclagem_azul'].state;
+                  var recycle_sensor2 = states['sensor.reciclagem_amarelo'].state;
+                  var recycle_sensor3 = states['sensor.reciclagem_verde'].state;
+                  if (recycle_sensor === "2" || recycle_sensor === "1") {
+                    return "Reciclagem Azul";
+                  } else if (recycle_sensor2 === "2" || recycle_sensor2 === "1") {
+                    return "Reciclagem Amarelo";
+                  } else if (recycle_sensor3 === "2" || recycle_sensor3 === "1") {
+                    return "Reciclagem Verde";
+                  } else {
+                    return "Reciclagem";
+                  }
+                ]]]
             hold_action:
               action: navigate
               navigation_path: ../calendar
             icon: |
-              [[[ 
-                var bbag_state = (states['sensor.black_bag'].state);
-                var bbag_days = (states['sensor.black_bag'].attributes.days);
-                var recycle_sensor = (states['sensor.recycling'].state);
-                var recycle_days = (states['sensor.recycling'].attributes.days);
-                if ((bbag_days <= 7) && (recycle_sensor == "2" || recycle_sensor == "1"))
-                  return "mdi:trash-can-outline"; 
-                else 
-                  return "mdi:recycle" 
+              [[[
+                var recycle_sensor = states['sensor.reciclagem_azul'].state;
+                var recycle_sensor2 = states['sensor.reciclagem_amarelo'].state;
+                var recycle_sensor3 = states['sensor.reciclagem_verde'].state;
+                if (recycle_sensor === "2" || recycle_sensor === "1") {
+                  return "mdi:newspaper";
+                } else if (recycle_sensor2 === "2" || recycle_sensor2 === "1") {
+                  return "mdi:google-cardboard";
+                } else if (recycle_sensor3 === "2" || recycle_sensor3 === "1") {
+                  return "mdi:glass-fragile";
+                } else {
+                  return "mdi:recycle";
+                }
               ]]]
             label: |
               [[[
-                var temp = states['climate.heating'].attributes.current_temperature;
+                var temp = states['climate.ac_sala'].attributes.current_temperature;
                 return '' + (temp ? temp : '0.0') + '°C';
               ]]]
             state_display: |
               [[[
-                var bbag_state = (states['sensor.black_bag'].state);
-                var bbag_days = (states['sensor.black_bag'].attributes.days);
-                var recycle_sensor = (states['sensor.recycling'].state);
-                var recycle_days = (states['sensor.recycling'].attributes.days);
-                if ((bbag_state == "0") || (recycle_sensor == "0")) return "Collect Today";
-                if ((bbag_state == "1") || (recycle_sensor == "1")) return "Collect Tomorrow";
-                if ((bbag_state == "2") || (recycle_sensor == "2")) {
-                  if (bbag_days <= 7) return "Collect in " + bbag_days + " Days";
-                  else if (recycle_days <= 7) return "Collect in " + recycle_days + " Days";
-                  else return "Unknown"
+                var recycle_sensor = states['sensor.reciclagem_azul'].state;
+                var recycle_sensor2 = states['sensor.reciclagem_amarelo'].state;
+                var recycle_sensor3 = states['sensor.reciclagem_verde'].state;
+                if (recycle_sensor === "0") {
+                  return "Recolher Hoje";
+                } else if (recycle_sensor === "1" || recycle_sensor2 === "1" || recycle_sensor3 === "1") {
+                  return "Recolha Amanhã";
+                } else {
+                  var minDays = Math.min(states['sensor.reciclagem_azul'].attributes.daysTo, states['sensor.reciclagem_amarelo'].attributes.daysTo, states['sensor.reciclagem_verde'].attributes.daysTo);
+                  if (minDays <= 7) {
+                    if (minDays === states['sensor.reciclagem_azul'].attributes.daysTo) {
+                      return "Recolha em " + minDays + " Dias";
+                    } else if (minDays === states['sensor.reciclagem_amarelo'].attributes.daysTo) {
+                      return "Recolha em " + minDays + " Dias";
+                    } else {
+                      return "Recolha em " + minDays + " Dias";
+                    }
+                  } else {
+                    return "Desconhecido";
+                  }
                 }
               ]]]
             show_state: true
@@ -137,11 +189,20 @@ views:
               card:
                 - background-color: |
                     [[[
-                      var bbag_days = (states['sensor.black_bag'].attributes.days);
-                      var recycle_sensor = (states['sensor.recycling'].state);
-                      if ((bbag_days <= 7) && (recycle_sensor == "2" || recycle_sensor == "1"))
-                        return "#212121";
-                      return "#4CAF50";
+                      var recycle_sensor = states['sensor.reciclagem_azul'].state;
+                      var recycle_sensor2 = states['sensor.reciclagem_amarelo'].state;
+                      var recycle_sensor3 = states['sensor.reciclagem_verde'].state;
+
+                      if (recycle_sensor === "2" || recycle_sensor === "1") {
+                        return "#2980B9"; // Blue color for Reciclagem Azul
+                      }
+                      if (recycle_sensor2 === "2" || recycle_sensor2 === "1") {
+                        return "#F1C40F"; // Yellow color for Reciclagem Amarelo
+                      }
+                      if (recycle_sensor3 === "2" || recycle_sensor3 === "1") {
+                        return "#27AE60"; // Green color for Reciclagem Verde
+                      }
+                      return "#4CAF50"; // Default color
                     ]]]
                 - color: white
               icon:
@@ -151,6 +212,8 @@ views:
               - standard_btn_states
               - standard_btn_states_on
             triggers_update:
-              - sensor.garden_waste
-              - sensor.recycling
-            type: 'custom:button-card'
+              - sensor.reciclagem_verde
+              - sensor.reciclagem_azul
+              - sensor.reciclagem_amarelo
+            type: custom:button-card
+        columns: 3
